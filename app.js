@@ -1161,11 +1161,6 @@ document.getElementById("onlyInvalidBtn").addEventListener("click", () => {
   renderAll();
 });
 
-document.getElementById("refreshBtn").addEventListener("click", () => {
-  renderAll();
-  showToast("已按当前系数重新计算");
-});
-
 document.getElementById("importBtn").addEventListener("click", () => {
   showToast("批量导入入口已触发");
 });
