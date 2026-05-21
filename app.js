@@ -36,6 +36,16 @@ const state = {
       cutoff: "2023-05-31",
       useSpecialCoef: false,
     },
+    customCoefficients: [
+      {
+        id: "custom-1",
+        name: "活动加权系数",
+        scope: "交易层",
+        value: 1,
+        enabled: true,
+        note: "用于记录临时活动加权，暂不参与正式结算公式。",
+      },
+    ],
   },
 };
 
@@ -290,6 +300,14 @@ function pct(value) {
 
 function trimNumber(value) {
   return Number(value.toFixed(2)).toString();
+}
+
+function escapeAttr(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 function toInputPercent(value) {
@@ -821,6 +839,60 @@ function renderConfigPanel() {
     return;
   }
 
+  if (tab === "custom") {
+    const customCoefficients = state.config.customCoefficients;
+    els.configPanel.innerHTML = `
+      <div class="custom-config-head">
+        <div>
+          <h3>自定义系数</h3>
+          <p>维护新增系数的名称、适用环节、数值和启用状态；默认作为配置项留存，不直接改写正式结算公式。</p>
+        </div>
+        <button class="ghost-button" type="button" data-add-custom-coef>+ 新增系数</button>
+      </div>
+      <div class="table-wrap custom-coef-table">
+        <table>
+          <thead>
+            <tr>
+              <th>系数名称</th>
+              <th>适用环节</th>
+              <th>系数值</th>
+              <th>状态</th>
+              <th>说明</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${customCoefficients.length ? customCoefficients.map((coef) => `
+              <tr>
+                <td><input class="custom-name-input" type="text" value="${escapeAttr(coef.name)}" data-edit="custom-name" data-coef="${coef.id}" /></td>
+                <td>
+                  <select data-edit="custom-scope" data-coef="${coef.id}">
+                    <option value="交易层" ${coef.scope === "交易层" ? "selected" : ""}>交易层</option>
+                    <option value="达人层" ${coef.scope === "达人层" ? "selected" : ""}>达人层</option>
+                    <option value="个人结算" ${coef.scope === "个人结算" ? "selected" : ""}>个人结算</option>
+                    <option value="团队结算" ${coef.scope === "团队结算" ? "selected" : ""}>团队结算</option>
+                    <option value="中台结算" ${coef.scope === "中台结算" ? "selected" : ""}>中台结算</option>
+                  </select>
+                </td>
+                <td><input type="number" min="0" step="0.01" value="${coef.value}" data-edit="custom-value" data-coef="${coef.id}" /></td>
+                <td>
+                  <label class="switch-field compact-switch">
+                    <input type="checkbox" data-edit="custom-enabled" data-coef="${coef.id}" ${coef.enabled ? "checked" : ""} />
+                    ${coef.enabled ? "启用" : "停用"}
+                  </label>
+                </td>
+                <td><input class="custom-note-input" type="text" value="${escapeAttr(coef.note)}" data-edit="custom-note" data-coef="${coef.id}" /></td>
+                <td><button class="action-link" type="button" data-delete-coef="${coef.id}">删除</button></td>
+              </tr>
+            `).join("") : `<tr><td colspan="6"><div class="empty-state">暂无自定义系数，点击“新增系数”开始配置。</div></td></tr>`}
+          </tbody>
+        </table>
+      </div>
+      <div class="note-box custom-note-box">提示：这些自定义系数适合记录新业务口径。若需要参与正式订单计算，建议先确认公式作用位置和优先级。</div>
+    `;
+    return;
+  }
+
   if (tab === "yangjie") {
     els.configPanel.innerHTML = `
       <div class="setting-grid">
@@ -921,6 +993,27 @@ function renderMiddle() {
   `).join("");
 }
 
+function addCustomCoefficient() {
+  const nextIndex = state.config.customCoefficients.length + 1;
+  state.config.customCoefficients.push({
+    id: `custom-${Date.now()}`,
+    name: `新系数 ${nextIndex}`,
+    scope: "交易层",
+    value: 1,
+    enabled: true,
+    note: "",
+  });
+  setPage("config");
+  setConfigTab("custom");
+  showToast("已新增系数，可直接编辑");
+}
+
+function deleteCustomCoefficient(id) {
+  state.config.customCoefficients = state.config.customCoefficients.filter((coef) => coef.id !== id);
+  setConfigTab("custom");
+  showToast("已删除自定义系数");
+}
+
 function renderAll() {
   renderMetrics();
   renderSettlement();
@@ -997,6 +1090,9 @@ function updateConfig(target) {
   const person = target.dataset.person
     ? people.find((item) => item.id === target.dataset.person)
     : null;
+  const customCoef = target.dataset.coef
+    ? state.config.customCoefficients.find((item) => item.id === target.dataset.coef)
+    : null;
 
   if (edit === "tier-min" && tier) tier.min = asNumber / 100;
   if (edit === "tier-max" && tier) tier.max = value === "" ? null : asNumber / 100;
@@ -1020,6 +1116,11 @@ function updateConfig(target) {
   if (edit === "yangjie-cutoff") state.config.yangjie.cutoff = value;
   if (edit === "yangjie-special") state.config.yangjie.useSpecialCoef = value;
   if (edit === "middle-fixed" && person) person.fixed = asNumber;
+  if (edit === "custom-name" && customCoef) customCoef.name = value.trim() || "未命名系数";
+  if (edit === "custom-scope" && customCoef) customCoef.scope = value;
+  if (edit === "custom-value" && customCoef) customCoef.value = asNumber;
+  if (edit === "custom-enabled" && customCoef) customCoef.enabled = value;
+  if (edit === "custom-note" && customCoef) customCoef.note = value.trim();
 
   renderAll();
   setConfigTab(state.configTab);
@@ -1047,6 +1148,18 @@ document.addEventListener("click", (event) => {
   const configButton = event.target.closest("[data-config-tab]");
   if (configButton) {
     setConfigTab(configButton.dataset.configTab);
+    return;
+  }
+
+  const addCustomCoef = event.target.closest("[data-add-custom-coef]");
+  if (addCustomCoef) {
+    addCustomCoefficient();
+    return;
+  }
+
+  const deleteCustomCoef = event.target.closest("[data-delete-coef]");
+  if (deleteCustomCoef) {
+    deleteCustomCoefficient(deleteCustomCoef.dataset.deleteCoef);
     return;
   }
 

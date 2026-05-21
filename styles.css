@@ -697,8 +697,77 @@ tbody tr:hover {
   text-align: left;
 }
 
+.add-coef-button {
+  width: 100%;
+  height: 40px;
+  margin-top: 10px;
+  border: 1px dashed #ffb16d;
+  border-radius: 7px;
+  background: #fff8ef;
+  color: var(--orange-dark);
+  font-weight: 700;
+}
+
+.add-coef-button:hover {
+  background: var(--orange);
+  color: #fff;
+}
+
 .config-panel {
   padding: 20px;
+}
+
+.custom-config-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.custom-config-head h3 {
+  color: #08182c;
+  font-size: 18px;
+}
+
+.custom-config-head p {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.custom-coef-table input,
+.custom-coef-table select {
+  height: 34px;
+  border: 1px solid #dbe2eb;
+  border-radius: 7px;
+  background: #fff;
+  color: #111827;
+  padding: 0 9px;
+  outline: 0;
+}
+
+.custom-coef-table input:focus,
+.custom-coef-table select:focus {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 3px #fff0df;
+}
+
+.custom-coef-table .custom-name-input {
+  width: 136px;
+}
+
+.custom-coef-table .custom-note-input {
+  width: 220px;
+}
+
+.compact-switch {
+  justify-content: flex-start;
+  white-space: nowrap;
+}
+
+.custom-note-box {
+  margin-top: 14px;
 }
 
 .setting-grid {
